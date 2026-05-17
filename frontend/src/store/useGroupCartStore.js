@@ -36,7 +36,7 @@ const useGroupCartStore = create(
           totalPrice: 0,
         };
         set({ basket, shareCode, isHost: true, userName: hostName });
-        broadcast('BASKET_UPDATED', { basket });
+        broadcastUpdate(basket);
         return shareCode;
       },
 
@@ -88,7 +88,7 @@ const useGroupCartStore = create(
 
         const newBasket = { ...basket, items: newItems, totalPrice };
         set({ basket: newBasket });
-        broadcast('BASKET_UPDATED', { basket: newBasket });
+        broadcastUpdate(newBasket);
         set({ notification: { message: `Added ${product.name}`, type: 'success' } });
         setTimeout(() => set({ notification: null }), 3000);
       },
@@ -110,7 +110,7 @@ const useGroupCartStore = create(
 
         const newBasket = { ...basket, items: newItems, totalPrice };
         set({ basket: newBasket });
-        broadcast('BASKET_UPDATED', { basket: newBasket });
+        broadcastUpdate(newBasket);
       },
 
       syncFromRemote: (basket) => set({ basket }),
@@ -123,13 +123,19 @@ const useGroupCartStore = create(
   )
 );
 
-if (channel) {
-  channel.onmessage = (event) => {
-    const { type, payload } = event.data;
-    if (type === 'BASKET_UPDATED') {
-      useGroupCartStore.getState().syncFromRemote(payload.basket);
-    }
-  };
+// Helper to broadcast via WS and save to DB
+function broadcastUpdate(basket) {
+  // Save to DB
+  fetch(`http://localhost:5000/api/group-cart/${basket.shareCode}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(basket)
+  }).catch(err => console.error("Failed to save basket", err));
+
+  // Sync via WS
+  import('./useSearchStore').then(mod => {
+     mod.default.getState().syncGroupCart(basket);
+  });
 }
 
 export default useGroupCartStore;

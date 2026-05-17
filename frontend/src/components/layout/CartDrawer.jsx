@@ -2,9 +2,41 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShoppingBag, ChevronRight, Zap } from 'lucide-react';
 import useCartStore from '../../store/useCartStore';
+import useAuthStore from '../../store/useAuthStore';
 
 export default function CartDrawer() {
-  const { isCartOpen, closeCart, cart, getCartCount, getSubtotal, removeItem, addItem } = useCartStore();
+  const { isCartOpen, closeCart, cart, getCartCount, getSubtotal, removeItem, addItem, clearCart } = useCartStore();
+  const { user } = useAuthStore();
+  const [isCheckingOut, setIsCheckingOut] = React.useState(false);
+
+  const handleCheckout = async () => {
+    setIsCheckingOut(true);
+    try {
+      const items = Object.values(cart).map(i => ({ 
+        id: i.product.id, 
+        name: i.product.name, 
+        price: i.product.price, 
+        quantity: i.quantity,
+        image: i.product.image || i.product.imageUrl
+      }));
+      const subtotal = getSubtotal();
+      
+      const res = await fetch('http://localhost:5000/api/auth/purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user?.id || null, items, totalAmount: subtotal + 2 })
+      });
+      
+      if (!res.ok) throw new Error("Failed to purchase");
+
+      clearCart();
+      closeCart();
+      alert('Order placed successfully! ' + (user ? 'Saved to your purchase history.' : 'Create an account to save history next time.'));
+    } catch (e) {
+      alert('Failed to place order: ' + e.message);
+    }
+    setIsCheckingOut(false);
+  };
 
   const totalItems = getCartCount();
   const subtotal = getSubtotal();
@@ -179,13 +211,17 @@ export default function CartDrawer() {
             {/* Bottom Checkout Bar */}
             {totalItems > 0 && (
               <div className="bg-white dark:bg-[#1a1a1a] border-t border-gray-100 dark:border-white/5 p-6 pb-8 z-10 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
-                <button className="w-full bg-primary hover:bg-primary-hover text-white rounded-2xl h-16 flex items-center justify-between px-6 transition shadow-lg shadow-primary/20 active:scale-[0.98]">
+                <button 
+                  onClick={handleCheckout}
+                  disabled={isCheckingOut}
+                  className={`w-full ${isCheckingOut ? 'bg-primary/50 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover active:scale-[0.98]'} text-white rounded-2xl h-16 flex items-center justify-between px-6 transition shadow-lg shadow-primary/20`}
+                >
                   <div className="flex flex-col items-start">
                     <span className="text-lg font-black tracking-tight">₹{subtotal + 2}</span>
                     <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Proceed to Pay</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm font-black uppercase tracking-widest bg-white/20 px-4 py-2 rounded-xl">
-                    Checkout <ChevronRight className="w-4 h-4" />
+                    {isCheckingOut ? 'Processing...' : 'Checkout'} <ChevronRight className="w-4 h-4" />
                   </div>
                 </button>
               </div>

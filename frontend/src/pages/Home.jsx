@@ -1,44 +1,45 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, ChevronRight, ArrowRight, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Zap, ArrowRight, Loader2 } from 'lucide-react';
 import ProductCard from '../components/product/ProductCard';
-import useSearchStore from '../store/useSearchStore';
+import { useHomeContent } from '../hooks/useHomeContent';
 
 // ── Category definitions ──────────────────────────────────────────────────────
 const CATEGORIES = [
-  { name: 'Dairy & Eggs',      emoji: '🥛', query: 'milk eggs dairy',   color: 'bg-blue-50',    border: 'border-blue-100' },
-  { name: 'Fruits & Veg',      emoji: '🥦', query: 'fresh fruits vegetables', color: 'bg-green-50', border: 'border-green-100' },
-  { name: 'Snacks',            emoji: '🍟', query: 'chips biscuits snacks', color: 'bg-yellow-50', border: 'border-yellow-100' },
-  { name: 'Cold Drinks',       emoji: '🥤', query: 'cold drinks soda juice', color: 'bg-cyan-50',  border: 'border-cyan-100' },
-  { name: 'Bakery',            emoji: '🍞', query: 'bread bakery cake',   color: 'bg-orange-50',  border: 'border-orange-100' },
-  { name: 'Atta, Rice & Dal',  emoji: '🌾', query: 'atta rice dal pulses', color: 'bg-amber-50',  border: 'border-amber-100' },
-  { name: 'Meat & Fish',       emoji: '🍗', query: 'chicken fish mutton', color: 'bg-red-50',     border: 'border-red-100' },
-  { name: 'Personal Care',     emoji: '🧴', query: 'shampoo soap personal care', color: 'bg-pink-50', border: 'border-pink-100' },
-  { name: 'Cleaning',          emoji: '🧹', query: 'cleaning detergent floor cleaner', color: 'bg-indigo-50', border: 'border-indigo-100' },
-  { name: 'Ice Cream',         emoji: '🍦', query: 'ice cream kulfi frozen dessert', color: 'bg-purple-50', border: 'border-purple-100' },
-  { name: 'Noodles & Pasta',   emoji: '🍜', query: 'noodles pasta maggi', color: 'bg-rose-50',   border: 'border-rose-100' },
-  { name: 'Tea & Coffee',      emoji: '☕', query: 'tea coffee',          color: 'bg-stone-50',   border: 'border-stone-100' },
+  { name: 'Dairy & Eggs',      emoji: '🥛', query: 'milk',   color: 'bg-blue-50',    border: 'border-blue-100' },
+  { name: 'Fruits & Veg',      emoji: '🥦', query: 'fruits', color: 'bg-green-50', border: 'border-green-100' },
+  { name: 'Snacks',            emoji: '🍟', query: 'chips', color: 'bg-yellow-50', border: 'border-yellow-100' },
+  { name: 'Cold Drinks',       emoji: '🥤', query: 'soft drink', color: 'bg-cyan-50',  border: 'border-cyan-100' },
+  { name: 'Bakery',            emoji: '🍞', query: 'bread',   color: 'bg-orange-50',  border: 'border-orange-100' },
+  { name: 'Atta, Rice & Dal',  emoji: '🌾', query: 'rice', color: 'bg-amber-50',  border: 'border-amber-100' },
+  { name: 'Meat & Fish',       emoji: '🍗', query: 'maggie', color: 'bg-red-50',     border: 'border-red-100' },
+  { name: 'Personal Care',     emoji: '🧴', query: 'soap', color: 'bg-pink-50', border: 'border-pink-100' },
+  { name: 'Cleaning',          emoji: '🧹', query: 'soap', color: 'bg-indigo-50', border: 'border-indigo-100' },
+  { name: 'Ice Cream',         emoji: '🍦', query: 'ice cream', color: 'bg-purple-50', border: 'border-purple-100' },
+  { name: 'Noodles & Pasta',   emoji: '🍜', query: 'maggie', color: 'bg-rose-50',   border: 'border-rose-100' },
+  { name: 'Tea & Coffee',      emoji: '☕', query: 'biscuits',          color: 'bg-stone-50',   border: 'border-stone-100' },
 ];
 
-// ── Curated catalog products (Blinkit demo rail) ───────────────────────────────
+// ── Curated catalog products (images from blinkit_v2.db / Cloudinary) ─────────
 const CATALOG = {
   dairy: [
-    { id: 'h1',  name: 'Amul Taaza Toned Milk', price: 68,  mrp: 72,  discount: 5,  quantity: '1 L',   image: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/assets/products/sliding_images/jpeg/1c0db977-31ab-4d8e-abf3-d42e4a4b4632.jpg', source: 'blinkit',   productUrl: 'https://blinkit.com/prn/amul-taaza-toned-fresh-milk/prid/12833', deliveryTime: '8 mins' },
-    { id: 'h2',  name: 'Nandini GoodLife Milk', price: 54, mrp: 54, discount: 0, quantity: '500 ml', image: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/assets/products/sliding_images/jpeg/5ee4441d-9109-48fa-9343-f5ce82b905a6.jpg', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
-    { id: 'h3',  name: 'Britannia Fresh Dahi', price: 40, mrp: 40, discount: 0, quantity: '400 g', image: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/assets/products/sliding_images/jpeg/09f58356-ccae-48f6-be11-bb035c678a10.jpg', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
-    { id: 'h4',  name: 'Farm Fresh Brown Eggs', price: 89,  mrp: 96,  discount: 7,  quantity: '6 pcs', image: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/assets/products/sliding_images/jpeg/443c5b5d-9fcb-4d40-ba7a-9774de90efb2.jpg', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
+    { id: 2581, name: 'Amul Gold Full Cream Milk',  price: 72,  mrp: 72,  discount: 0,  quantity: '1 ltr', image: 'https://res.cloudinary.com/dxxcxqdsj/image/upload/v1778982585/blinkit_store/bndu7ysrlyh61c355dkn.webp', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
+    { id: 2582, name: 'Amul Taaza Toned Milk',       price: 30,  mrp: 30,  discount: 0,  quantity: '500 ml', image: 'https://res.cloudinary.com/dxxcxqdsj/image/upload/v1778982587/blinkit_store/u0aeqjljs5qqlhyn3lrh.webp', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
+    { id: 2583, name: 'Mother Dairy Toned Milk',     price: 29,  mrp: 29,  discount: 0,  quantity: '500 ml', image: 'https://res.cloudinary.com/dxxcxqdsj/image/upload/v1778982589/blinkit_store/ejyylsxwlwqxamiulfmw.webp', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
+    { id: 2918, name: 'Britannia Good Day Cashew Biscuit', price: 40, mrp: 40, discount: 0, quantity: '200 g', image: 'https://res.cloudinary.com/dxxcxqdsj/image/upload/v1778983140/blinkit_store/r0e5q2iwuj82s2drz7k0.webp', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
   ],
   snacks: [
-    { id: 'h7',  name: 'Lays Classic Salted', price: 20, mrp: 20, discount: 0, quantity: '50 g', image: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/assets/products/sliding_images/jpeg/0fef70a3-294b-48af-b461-8cf9690f0586.jpg', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
-    { id: 'h8',  name: "Lay's Magic Masala", price: 20, mrp: 20, discount: 0, quantity: '50 g', image: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/assets/products/sliding_images/jpeg/77794356-6f81-426c-8e4a-9b883017e82b.jpg', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
-    { id: 'h9',  name: 'Doritos Cheese Nachos', price: 50, mrp: 50, discount: 0, quantity: '60 g', image: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/assets/products/sliding_images/jpeg/43da4930-58c0-4822-8302-3c829e061730.jpg', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
+    { id: 2724, name: 'Too Yumm Grilled Cheese & Chilli Chips', price: 49, mrp: 49, discount: 0, quantity: '60 g', image: 'https://res.cloudinary.com/dxxcxqdsj/image/upload/v1778982778/blinkit_store/kdwmrljcjoytkrcnap77.webp', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
+    { id: 2725, name: 'Uncle Chipps Spicy Treat',   price: 20, mrp: 20, discount: 0, quantity: '53 g', image: 'https://res.cloudinary.com/dxxcxqdsj/image/upload/v1778982779/blinkit_store/t40wnjcgxixcl0kip6pg.webp', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
+    { id: 2726, name: "Lay's India's Magic Masala", price: 25, mrp: 25, discount: 0, quantity: '58 g', image: 'https://res.cloudinary.com/dxxcxqdsj/image/upload/v1778982781/blinkit_store/jsl5cy6uxkgnwt0i8tmc.webp', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
+    { id: 2790, name: 'Doritos Cheese Nachos',       price: 50, mrp: 50, discount: 0, quantity: '60 g', image: 'https://res.cloudinary.com/dxxcxqdsj/image/upload/v1778982917/blinkit_store/ooqvrled2krtrca29bc9.webp', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
   ],
   fruits: [
-    { id: 'h13', name: 'Bananas', price: 44, mrp: 50, discount: 12, quantity: '6 pcs', image: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/assets/products/sliding_images/jpeg/07688037-0cfd-4a67-9aa3-f09b266184fc.jpg', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
-    { id: 'h14', name: 'Fresh Tomatoes', price: 35, mrp: 40, discount: 12, quantity: '500 g', image: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/assets/products/sliding_images/jpeg/2d0e0c24-d032-473d-8697-36e6b566f1d0.jpg', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
-    { id: 'h17', name: 'Onions', price: 39, mrp: 42, discount: 7, quantity: '1 kg', image: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/assets/products/sliding_images/jpeg/1f03e1e2-b1e0-47b2-8509-f6226f977c07.jpg', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
-    { id: 'h18', name: 'Potatoes', price: 29, mrp: 35, discount: 17, quantity: '1 kg', image: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/assets/products/sliding_images/jpeg/3389025e-316e-41d6-8488-51152a514d87.jpg', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
+    { id: 3587, name: 'Banana',                     price: 38, mrp: 42, discount: 10, quantity: '3 pcs', image: 'https://res.cloudinary.com/dxxcxqdsj/image/upload/v1778984324/blinkit_store/drele8y7t6z9pcbrafp8.webp', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
+    { id: 3588, name: 'Madhu Muskmelon (Kharabooja)',price: 58, mrp: 65, discount: 11, quantity: '400 g', image: 'https://res.cloudinary.com/dxxcxqdsj/image/upload/v1778984326/blinkit_store/ksyxvdw9xuwl68esl8nd.webp', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
+    { id: 3589, name: 'Peeled Pomegranate Snack',   price: 76, mrp: 85, discount: 11, quantity: '80 g',  image: 'https://res.cloudinary.com/dxxcxqdsj/image/upload/v1778984328/blinkit_store/upoavnzbzmcz6panpfgu.webp', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
+    { id: 3586, name: 'Yu Lychee Juice with Chia',  price: 150, mrp: 150, discount: 0, quantity: '3×225ml', image: 'https://res.cloudinary.com/dxxcxqdsj/image/upload/v1778984321/blinkit_store/fnwmtxeiaevbzx905kfv.webp', source: 'blinkit', productUrl: '#', deliveryTime: '8 mins' },
   ],
 };
 
@@ -64,16 +65,10 @@ function ProductRail({ title, products, query }) {
 
 export default function Home() {
   const navigate = useNavigate();
-  const { categories, featuredProducts, fetchHomeContent, isConnected } = useSearchStore();
-
-  useEffect(() => {
-    if (isConnected) {
-      fetchHomeContent();
-    }
-  }, [isConnected]);
+  const { categories, featuredProducts } = useHomeContent();
 
   const handleCategoryClick = (cat) => {
-    navigate(`/search?q=${encodeURIComponent(cat.name)}`);
+    navigate(`/search?q=${encodeURIComponent(cat.query || cat.name)}`);
   };
 
   return (
@@ -147,9 +142,9 @@ export default function Home() {
       )}
 
       {/* Fallback Rails */}
-      <ProductRail title="🥛 Dairy, Bread & Eggs" products={CATALOG.dairy} query="milk eggs dairy bread" />
-      <ProductRail title="🍟 Snacks & Munchies" products={CATALOG.snacks} query="chips biscuits snacks" />
-      <ProductRail title="🥦 Fruits & Vegetables" products={CATALOG.fruits} query="fresh fruits vegetables" />
+      <ProductRail title="🥛 Dairy, Bread & Eggs" products={CATALOG.dairy} query="dairy" />
+      <ProductRail title="🍟 Snacks & Munchies" products={CATALOG.snacks} query="snacks" />
+      <ProductRail title="🥦 Fruits & Vegetables" products={CATALOG.fruits} query="fruits" />
     </div>
   );
 }

@@ -3,52 +3,76 @@ const axios = require('axios');
 class BlinkitAPI {
     constructor() {
         this.baseUrl = 'https://blinkit.com/v1';
-        this.headers = {
-            'accept': 'application/json, text/plain, */*',
-            'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8',
-            'app_client': '1',
-            'app_instance_id': '8665f97b-4d44-4860-9567-c6b753a99252', // Static fallback
-            'device_id': '8665f97b-4d44-4860-9567-c6b753a99252',
-            'origin': 'https://blinkit.com',
-            'referer': 'https://blinkit.com/',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-        };
+        this.page = null; // Will be set by server.js
+    }
+
+    setPage(page) {
+        this.page = page;
     }
 
     async search(query, lat = 19.076, lon = 72.877) {
-        try {
-            console.log(`[API] Searching Blinkit for: "${query}"`);
-            const response = await axios.get(`${this.baseUrl}/search/search_product/`, {
-                params: {
-                    q: query,
-                    size: 20,
-                    lat: lat,
-                    lon: lon
-                },
-                headers: this.headers
-            });
+        if (!this.page) {
+            console.error('[API] No browser page available for stealth fetch');
+            return [];
+        }
 
-            return this.transformProducts(response.data);
+        try {
+            console.log(`[STEALTH API] Searching: "${query}"`);
+            const url = `${this.baseUrl}/search/search_product/?q=${encodeURIComponent(query)}&size=20&lat=${lat}&lon=${lon}`;
+            
+            const responseData = await this.page.evaluate(async (url) => {
+                const res = await fetch(url, {
+                    headers: { 'app_client': '1', 'app_instance_id': '8665f97b-4d44-4860-9567-c6b753a99252' }
+                });
+                const text = await res.text();
+                try {
+                    return { ok: true, data: JSON.parse(text) };
+                } catch (e) {
+                    return { ok: false, text: text.substring(0, 500) };
+                }
+            }, url);
+
+            if (!responseData.ok) {
+                console.error('[STEALTH API] Raw Response Error:', responseData.text);
+                return [];
+            }
+            const data = responseData.data;
+
+            return this.transformProducts(data);
         } catch (error) {
-            console.error('[API] Search Error:', error.response?.status || error.message);
+            console.error('[STEALTH API] Search Error:', error.message);
             return [];
         }
     }
 
     async getLayout(lat = 19.076, lon = 72.877) {
-        try {
-            console.log(`[API] Fetching Blinkit Layout for ${lat}, ${lon}`);
-            const response = await axios.get(`${this.baseUrl}/layout/home/`, {
-                params: {
-                    lat: lat,
-                    lon: lon
-                },
-                headers: this.headers
-            });
+        if (!this.page) return [];
 
-            return this.extractCategories(response.data);
+        try {
+            console.log(`[STEALTH API] Fetching Layout: ${lat}, ${lon}`);
+            const url = `${this.baseUrl}/layout/home/?lat=${lat}&lon=${lon}`;
+            
+            const responseData = await this.page.evaluate(async (url) => {
+                const res = await fetch(url, {
+                    headers: { 'app_client': '1', 'app_instance_id': '8665f97b-4d44-4860-9567-c6b753a99252' }
+                });
+                const text = await res.text();
+                try {
+                    return { ok: true, data: JSON.parse(text) };
+                } catch (e) {
+                    return { ok: false, text: text.substring(0, 500) };
+                }
+            }, url);
+
+            if (!responseData.ok) {
+                console.error('[STEALTH API] Layout Raw Response Error:', responseData.text);
+                return [];
+            }
+            const data = responseData.data;
+
+            return this.extractCategories(data);
         } catch (error) {
-            console.error('[API] Layout Error:', error.response?.status || error.message);
+            console.error('[STEALTH API] Layout Error:', error.message);
             return [];
         }
     }
@@ -73,7 +97,6 @@ class BlinkitAPI {
             }
         });
 
-        // Unique by name
         return Array.from(new Map(categories.map(item => [item.name, item])).values());
     }
 

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, Search, RefreshCw, ShoppingBag } from 'lucide-react';
 import ProductCard from '../components/product/ProductCard';
 import useSearchStore from '../store/useSearchStore';
-import useLocationStore from '../store/useLocationStore';
+
 
 const SOURCE_CONFIG = {
   blinkit: {
@@ -63,11 +63,10 @@ export default function SearchResults() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
   const { search, isSearching, statusMessage, products, isConnected } = useSearchStore();
-  const { isSet: isLocationSet } = useLocationStore();
 
   useEffect(() => {
-    if (query && isLocationSet && isConnected) search(query);
-  }, [query, isLocationSet, isConnected]);
+    if (query && isConnected) search(query);
+  }, [query, isConnected]);
 
   const hasAnyResults = (products.blinkit || []).length > 0;
 
@@ -80,15 +79,7 @@ export default function SearchResults() {
     );
   }
 
-  if (!isLocationSet) {
-    return (
-      <div className="flex flex-col items-center justify-center pt-32 gap-4 text-center px-4">
-        <div className="text-5xl mb-2">📍</div>
-        <h2 className="text-2xl font-black text-gray-800 dark:text-gray-100">Set your location</h2>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">Click the picker above to see Blinkit prices.</p>
-      </div>
-    );
-  }
+
 
   return (
     <div className="w-full pb-16">

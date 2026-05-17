@@ -3,9 +3,11 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/layout/Navbar';
 import CartDrawer from './components/layout/CartDrawer';
 import LocationModal from './components/layout/LocationModal';
+import AuthModal from './components/layout/AuthModal';
 import Home from './pages/Home';
 import SearchResults from './pages/SearchResults';
 import GroupCart from './pages/GroupCart';
+import Profile from './pages/Profile';
 import useSearchStore from './store/useSearchStore';
 
 function App() {
@@ -24,11 +26,12 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/search" element={<SearchResults />} />
             <Route path="/group-cart" element={<GroupCart />} />
-            {/* Additional routes will go here */}
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         </main>
         <CartDrawer />
         <LocationModal />
+        <AuthModal />
       </div>
     </Router>
   );

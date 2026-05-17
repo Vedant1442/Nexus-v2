@@ -1,34 +1,20 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Search, ShoppingCart, Users, ChevronDown, Wifi, WifiOff, Zap, Sun, Moon } from 'lucide-react';
 import useCartStore from '../../store/useCartStore';
 import useLocationStore from '../../store/useLocationStore';
 import useSearchStore from '../../store/useSearchStore';
+import useAuthStore from '../../store/useAuthStore';
+import { useTheme } from '../../hooks/useTheme';
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const { openCart, getCartCount, cart } = useCartStore();
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const { openCart, getCartCount } = useCartStore();
   const { locationTitle, locationFull, openLocation } = useLocationStore();
   const { isConnected } = useSearchStore();
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark');
-    }
-    return false;
-  });
-
-  const toggleTheme = () => {
-    const newDark = !isDark;
-    setIsDark(newDark);
-    if (newDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  };
+  const { user, openAuthModal } = useAuthStore();
+  const { isDark, toggleTheme } = useTheme();
 
   const totalItems = getCartCount();
 
@@ -115,6 +101,20 @@ export default function Navbar() {
             >
               <Users className="w-4 h-4" />
               <span className="hidden lg:inline">Group Cart</span>
+            </button>
+
+            {/* Profile / Sign In */}
+            <button
+              onClick={() => user ? navigate('/profile') : openAuthModal()}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 font-bold text-sm border border-transparent hover:bg-gray-200 dark:hover:bg-white/10 transition"
+            >
+              {user ? (
+                <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+              ) : (
+                <span className="hidden sm:inline">Sign In</span>
+              )}
             </button>
 
             {/* Cart button */}
